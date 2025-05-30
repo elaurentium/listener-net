@@ -1,8 +1,9 @@
 package main
 
 import (
-	"elaurentium/listener-net/cmd"
 	"fmt"
+
+	"github.com/elaurentium/listener-net/cmd"
 )
 
 func init() {
