@@ -9,7 +9,7 @@ import (
 
 
 type UserRepository interface {
-	GetById(ctx context.Context, id uuid.UUID) (*entities.User, error)
+	GetByID(ctx context.Context, id uuid.UUID) (*entities.User, error)
 	GetByIP(ctx context.Context, ip string) (*entities.User, error)
 	Create(ctx context.Context, user *entities.User) error
 }
