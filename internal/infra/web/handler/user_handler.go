@@ -21,13 +21,32 @@ func NewUserHandler(userService *service.UserService) *UserHandler {
 
 
 type UserRequest struct {
-	IP 		string    `json:"ip" binding:"required"`
-	Name	string    `json:"name" binding:"required"`
+	IP 			string    `json:"ip" binding:"required"`
+	Name		string    `json:"name" binding:"required"`
+	Dispositive	string    `json:"dispositive" binding:"required"`
 }
 
-type BlacklistRequest struct {
-	IP 		string    `json:"ip" binding:"required"`
-	Name	string    `json:"name" binding:"required"`
+func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
+	var req UserRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		return
+	}
+
+	user, err := h.UserService.Register(r.Context(), req.IP, req.Name, req.Dispositive)
+
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(user)
 }
 
 func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
