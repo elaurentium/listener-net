@@ -25,6 +25,10 @@ type UserRequest struct {
 	Name	string    `json:"name" binding:"required"`
 }
 
+type BlacklistRequest struct {
+	IP 		string    `json:"ip" binding:"required"`
+	Name	string    `json:"name" binding:"required"`
+}
 
 func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 	userRaw := r.Context().Value("user_ip")

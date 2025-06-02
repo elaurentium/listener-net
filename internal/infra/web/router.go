@@ -3,7 +3,7 @@ package web
 import (
 	"net/http"
 
-	"github.com/elaurentium/listener-net/internal/domain/infra/web/handler"
+	"github.com/elaurentium/listener-net/internal/infra/web/handler"
 )
 
 
