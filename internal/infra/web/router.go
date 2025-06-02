@@ -10,7 +10,6 @@ import (
 func NewRouter(userHandler *handler.UserHandler) *http.ServeMux {
 	mux := http.NewServeMux()
 
-	mux.
 
 	return mux
 }

@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/elaurentium/listener-net/internal/domain/service"
+	"github.com/google/uuid"
 )
 
 
@@ -25,13 +26,34 @@ type UserRequest struct {
 }
 
 
-func (h *UserHandler) GetById(w http.ResponseWriter, r *http.Request) {
-	var req UserRequest
+func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
+	userRaw := r.Context().Value("user_ip")
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	if userRaw == nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Unauthorized"})
+	}
+
+	userID, ok := userRaw.(uuid.UUID)
+	
+	if !ok {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid user ID"})
 		return
 	}
 
-	
+	user, err := h.UserService.GetByID(r.Context(), userID)
+
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(user)
 }
