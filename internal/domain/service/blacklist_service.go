@@ -54,3 +54,11 @@ func (r *BlacklistService) Register(ctx context.Context, ip string, name string,
 
 	return blacklist, nil
 }
+
+func (r *BlacklistService) GetByID(ctx context.Context, id uuid.UUID) (*entities.Blacklist, error) {
+	return r.blacklistRepo.GetByID(ctx, id)
+}
+
+func (r *BlacklistService) GetByIP(ctx context.Context, ip string) (*entities.Blacklist, error) {
+	return r.blacklistRepo.GetByIP(ctx, ip)
+}

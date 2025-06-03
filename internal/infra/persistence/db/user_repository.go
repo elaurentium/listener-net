@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/elaurentium/listener-net/internal/domain/entities"
 	"github.com/google/uuid"
@@ -12,6 +13,7 @@ type UserRepository interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*entities.User, error)
 	GetByIP(ctx context.Context, ip string) (*entities.User, error)
 	Create(ctx context.Context, user *entities.User) error
+	CheckIPWasRegistred(ctx context.Context, ip string) (bool, error)
 }
 
 
@@ -64,4 +66,16 @@ func (r *userRepository) GetByIP(ctx context.Context, ip string) (*entities.User
 	}
 
 	return user, nil
+}
+
+func (r *userRepository) CheckIPWasRegistred(ctx context.Context, ip string) (bool, error) {
+	var exists bool
+
+	err := r.pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM USERS WHERE IP = $1)", ip).Scan(&exists)
+
+	if err != nil {
+		return false, fmt.Errorf("failed to check if IP was registred: %w", err)
+	}
+
+	return exists, nil
 }
