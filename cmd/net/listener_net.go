@@ -4,10 +4,12 @@ import (
 	"fmt"
 
 	"github.com/elaurentium/listener-net/cmd"
+	"github.com/elaurentium/listener-net/cmd/sub"
 )
 
 func init() {
 	cmd.PrintBanner()
+	sub.Interfaces()
 }
 
 func main() {
