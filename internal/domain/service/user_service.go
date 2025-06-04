@@ -7,17 +7,20 @@ import (
 
 	"github.com/elaurentium/listener-net/internal/domain/entities"
 	"github.com/elaurentium/listener-net/internal/domain/repository"
+	"github.com/elaurentium/listener-net/internal/infra/web/auth"
 	"github.com/google/uuid"
 )
 
 type UserService struct {
 	userRepo repository.UserRepository
+	auth auth.AuthService
 }
 
 
-func NewUserRepository(userRepo repository.UserRepository) *UserService {
+func NewUserService(userRepo repository.UserRepository, auth auth.AuthService) *UserService {
 	return &UserService{
 		userRepo: userRepo,
+		auth: auth,
 	}
 }
 
@@ -55,4 +58,8 @@ func (s *UserService) GetByID(ctx context.Context, id uuid.UUID) (*entities.User
 
 func (s *UserService) GetByIP(ctx context.Context, ip string) (*entities.User, error) {
 	return s.userRepo.GetByIP(ctx, ip)
+}
+
+func (s *UserService) GetByDispositive(ctx context.Context, dispositive string) (*entities.User, error) {
+	return s.userRepo.GetByDispositive(ctx, dispositive)
 }

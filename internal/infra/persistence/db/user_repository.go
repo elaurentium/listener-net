@@ -12,10 +12,10 @@ import (
 type UserRepository interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*entities.User, error)
 	GetByIP(ctx context.Context, ip string) (*entities.User, error)
+	GetByDispositive(ctx context.Context, dispositive string) (*entities.User, error)
 	Create(ctx context.Context, user *entities.User) error
 	CheckIPWasRegistred(ctx context.Context, ip string) (bool, error)
 }
-
 
 type userRepository struct {
 	pool *pgxpool.Pool
@@ -24,7 +24,6 @@ type userRepository struct {
 func NewUserRepository(pool *pgxpool.Pool) UserRepository {
 	return &userRepository{pool: pool}
 }
-
 
 func (r *userRepository) Create(ctx context.Context, user *entities.User) error {
 	query := `
@@ -60,6 +59,20 @@ func (r *userRepository) GetByIP(ctx context.Context, ip string) (*entities.User
 		SELECT * FROM USERS WHERE IP = $1
 	`
 	err := r.pool.QueryRow(ctx, query, ip).Scan(&user.IP)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
+func (r *userRepository) GetByDispositive(ctx context.Context, dispositive string) (*entities.User, error) {
+	user := &entities.User{}
+	query := `
+		SELECT * FROM USERS WHERE DISPOSITIVE = $1
+	`
+	err := r.pool.QueryRow(ctx, query, dispositive).Scan(&user.Dispositive)
 
 	if err != nil {
 		return nil, err
