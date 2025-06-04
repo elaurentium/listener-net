@@ -8,10 +8,11 @@ import (
 )
 
 func init() {
+	cmd.CheckOS()
 	cmd.PrintBanner()
-	sub.Interfaces()
 }
 
 func main() {
 	fmt.Printf("Welcome to the Listener Net application!\n")
+	sub.Interfaces()
 }
