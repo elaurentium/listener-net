@@ -6,7 +6,7 @@ command_exist() {
     command -v "$1" > /dev/null 2>&1
 }
 
-if [[ "$OSTYPE" == "linux-gnu" ]] then
+if [[ "$OSTYPE" == "linux-gnu" ]]; then
     export CGO_ENABLED=0
     export GOOS=linux
     export GOARCH=amd64

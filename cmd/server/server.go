@@ -1,8 +1,9 @@
-package cmd
+package main
 
 import (
 	"net/http"
 
+	"github.com/elaurentium/listener-net/cmd"
 	"github.com/elaurentium/listener-net/internal/domain/service"
 	"github.com/elaurentium/listener-net/internal/infra/persistence/db"
 	"github.com/elaurentium/listener-net/internal/infra/web"
@@ -11,13 +12,13 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func Instance() {
+func main() {
 	godotenv.Load()
-	Logger.Println("Initializing")
+	cmd.Logger.Println("Initializing")
 
 	pool, err := db.NewDBConnection()
 	if err != nil {
-		Logger.Println(err)
+		cmd.Logger.Println(err)
 		return
 	}
 
@@ -36,6 +37,6 @@ func Instance() {
 	}
 
 	if err := server.ListenAndServe(); err != nil {
-		Logger.Println(err)
+		cmd.Logger.Println(err)
 	}
 }

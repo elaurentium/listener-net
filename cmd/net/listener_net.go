@@ -11,7 +11,6 @@ import (
 
 func init() {
 	cmd.CheckOS()
-	cmd.Instance()
 	cmd.PrintBanner()
 }
 
