@@ -19,7 +19,6 @@ func main() {
 	pool, err := db.NewDBConnection()
 	if err != nil {
 		cmd.Logger.Println(err)
-		return
 	}
 
 	defer pool.Close()
@@ -39,4 +38,6 @@ func main() {
 	if err := server.ListenAndServe(); err != nil {
 		cmd.Logger.Println(err)
 	}
+
+	cmd.Logger.Println("Run {}", server)
 }
