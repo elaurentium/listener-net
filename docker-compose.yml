@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:latest
+    container_name: mysql
+    env_file:
+      - .env.dev
+    volumes:
+      - mysql-data:/var/lib/mysql/data:rw
+      - ./migrations:/docker-entrypoint-initdb.d
+    ports:
+      - "3306:3306"
+    networks:
+      - api
+  api:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: server-net
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    networks:
+      - api
+
+networks:
+  api:
+    driver: bridge
+
+
+volumes:
+  mysql-data:
