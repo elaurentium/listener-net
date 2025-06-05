@@ -30,4 +30,4 @@ else
     exit 1
 fi
 
-##make all
+make all
