@@ -7,7 +7,6 @@ command_exist() {
 }
 
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
-    export CGO_ENABLED=0
     export GOOS=linux
     export GOARCH=amd64
 
@@ -17,7 +16,6 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
     fi
 
 elif [[ "$OSTYPE" == "darwin"* ]]; then
-    export CGO_ENABLED=0
     export GOOS=darwin
     export GOARCH=amd64
 
