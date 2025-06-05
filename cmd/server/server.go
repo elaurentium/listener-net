@@ -16,14 +16,14 @@ func main() {
 	godotenv.Load()
 	cmd.Logger.Println("Initializing")
 
-	pool, err := db.NewDBConnection()
+	dbConn, err := db.NewDBConnection()
 	if err != nil {
 		cmd.Logger.Println(err)
 	}
 
-	defer pool.Close()
+	defer dbConn.Close()
 
-	userRepo := db.NewUserRepository(pool)
+	userRepo := db.NewUserRepository(dbConn)
 	authService := auth.NewAuthService()
 	userService := service.NewUserService(userRepo, authService)
 	userHandler := handler.NewUserHandler(userService)

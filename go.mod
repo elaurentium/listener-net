@@ -9,11 +9,13 @@ require (
 )
 
 require (
+	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
 	github.com/jteeuwen/go-bindata v3.0.7+incompatible // indirect
 )
 
 require (
+	github.com/go-sql-driver/mysql v1.9.2
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/google/gopacket v1.1.19
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect

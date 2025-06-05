@@ -2,10 +2,11 @@ version: '3.8'
 
 services:
   db:
-    image: mysql:latest
+    image: mysql:9.3.0
     container_name: mysql
-    env_file:
-      - .env.dev
+    environment:
+      MYSQL_ROOT_PASSWORD: password      
+      MYSQL_DATABASE: mydb
     volumes:
       - mysql-data:/var/lib/mysql/data:rw
       - ./migrations:/docker-entrypoint-initdb.d

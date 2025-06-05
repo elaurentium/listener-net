@@ -1,11 +1,10 @@
 package db
 
 import (
-	"context"
+	"database/sql"
 	"fmt"
 	"os"
-
-	"github.com/jackc/pgx/v4/pgxpool"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 
@@ -13,19 +12,24 @@ type DBConnection struct {
 	User	 string
 	Password string
 	DBName   string
+	Host     string
+	Port     string
 }
 
 
-func NewDBConnection() (*pgxpool.Pool, error) {
+func NewDBConnection() (*sql.DB, error) {
 	config := &DBConnection{
 		User: os.Getenv("DB_USER"),
 		Password: os.Getenv("DB_PASSWORD"),
 		DBName: os.Getenv("DB_NAME"),
+		Host: os.Getenv("DB_HOST"),
+		Port: os.Getenv("DB_PORT"),
 	}
 
-	dns := fmt.Sprintf("%s:%s@/%s", config.User, config.Password, config.DBName)
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true",
+		config.User, config.Password, config.Host, config.Port, config.DBName)
 
-	db, err := pgxpool.Connect(context.Background(), dns)
+	db, err := sql.Open("mysql", dsn)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
