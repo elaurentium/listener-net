@@ -23,7 +23,7 @@ func main() {
 	}
 
 	defer dbConn.Close()
-	
+
 	cmd.Logger.Println("Database connected successfully")
 
 	userRepo := db.NewUserRepository(dbConn)
@@ -38,10 +38,8 @@ func main() {
 		Handler: router,
 	}
 
-	go func() {
-		cmd.Logger.Printf("Server started on %s", server.Addr)
-		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed  {
-			cmd.Logger.Fatalf("Server failed to start: %v", err)
-		}
-	}()
+	cmd.Logger.Printf("Server started on %s", server.Addr)
+	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		cmd.Logger.Fatalf("Server failed to start: %v", err)
+	}
 }

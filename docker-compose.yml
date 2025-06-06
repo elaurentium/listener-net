@@ -4,6 +4,9 @@ services:
   db:
     image: postgres:15-alpine
     container_name: listener-net-db
+    env_file:
+      - .env
+      - .env.dev
     environment:
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
@@ -12,7 +15,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./migrations:/docker-entrypoint-initdb.d 
     ports:
-      - "3306:3306"
+      - "5432:5432"
     networks:
       - listener-net
   api:
@@ -35,6 +38,13 @@ services:
       - db
     networks:
       - listener-net
+    command: > 
+      sh -c "until pg_isready -h db -p ${DB_PORT} -U ${DB_USER} -d ${DB_NAME}; do
+                    echo 'Waiting for db';
+                    sleep 2;
+                    done;
+                    echo 'db is ready'
+                    ./server"
 
 networks:
   listener-net:
