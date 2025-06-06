@@ -4,7 +4,7 @@ COPY . .
 RUN go build -o build/server cmd/server/server.go
 
 FROM alpine:latest
-RUN apk --no-cache add ca-certificates mysql-client
+RUN apk --no-cache add ca-certificates postgresql
 WORKDIR /app
 COPY --from=builder /app/build .
 EXPOSE 8080

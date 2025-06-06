@@ -23,11 +23,7 @@ func main() {
 	}
 
 	defer dbConn.Close()
-
-	if err := dbConn.Ping(); err != nil {
-		cmd.Logger.Fatalf("Database ping failed: %v", err)
-		return
-	}
+	
 	cmd.Logger.Println("Database connected successfully")
 
 	userRepo := db.NewUserRepository(dbConn)

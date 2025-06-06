@@ -1,35 +1,45 @@
-version: '3.8'
+version: "3.8"
 
 services:
   db:
-    image: mysql:9.3.0
-    container_name: mysql
+    image: postgres:15-alpine
+    container_name: listener-net-db
     environment:
-      MYSQL_ROOT_PASSWORD: password      
-      MYSQL_DATABASE: mydb
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
     volumes:
-      - mysql-data:/var/lib/mysql/data:rw
-      - ./migrations:/docker-entrypoint-initdb.d
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d 
     ports:
       - "3306:3306"
     networks:
-      - api
+      - listener-net
   api:
     build: 
       context: .
       dockerfile: Dockerfile
-    container_name: server-net
+    container_name: listener-net-api
+    env_file:
+      - .env
+      - .env.dev
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+      - DB_HOST=db
+      - DB_PORT=${DB_PORT}
     ports:
       - "8080:8080"
     depends_on:
       - db
     networks:
-      - api
+      - listener-net
 
 networks:
-  api:
+  listener-net:
     driver: bridge
 
 
 volumes:
-  mysql-data:
+  postgres_data:
