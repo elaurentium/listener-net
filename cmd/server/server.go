@@ -18,10 +18,17 @@ func main() {
 
 	dbConn, err := db.NewDBConnection()
 	if err != nil {
-		cmd.Logger.Println(err)
+		cmd.Logger.Fatalf("Failed to connect to database: %v", err)
+		return
 	}
 
 	defer dbConn.Close()
+
+	if err := dbConn.Ping(); err != nil {
+		cmd.Logger.Fatalf("Database ping failed: %v", err)
+		return
+	}
+	cmd.Logger.Println("Database connected successfully")
 
 	userRepo := db.NewUserRepository(dbConn)
 	authService := auth.NewAuthService()
@@ -35,9 +42,10 @@ func main() {
 		Handler: router,
 	}
 
-	if err := server.ListenAndServe(); err != nil {
-		cmd.Logger.Println(err)
-	}
-
-	cmd.Logger.Println("Run {}", server)
+	go func() {
+		cmd.Logger.Printf("Server started on %s", server.Addr)
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed  {
+			cmd.Logger.Fatalf("Server failed to start: %v", err)
+		}
+	}()
 }
