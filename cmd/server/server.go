@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/elaurentium/listener-net/cmd"
+	"github.com/elaurentium/listener-net/cmd/sub"
 	"github.com/elaurentium/listener-net/internal/domain/service"
 	"github.com/elaurentium/listener-net/internal/infra/persistence/db"
 	"github.com/elaurentium/listener-net/internal/infra/web"
@@ -29,6 +30,7 @@ func main() {
 	userRepo := db.NewUserRepository(dbConn)
 	authService := auth.NewAuthService()
 	userService := service.NewUserService(userRepo, authService)
+	go sub.Interfaces(userService)
 	userHandler := handler.NewUserHandler(userService)
 
 	router := web.NewRouter(userHandler)

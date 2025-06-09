@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/elaurentium/listener-net/internal/domain/entities"
@@ -25,16 +24,6 @@ func NewUserService(userRepo repository.UserRepository, auth auth.AuthService) *
 }
 
 func (s *UserService) Register(ctx context.Context, ip string, name string, dispositive string) (*entities.User, error) {
-	exist, err := s.userRepo.CheckIPWasRegistred(ctx, ip)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if exist {
-		return nil, errors.New("ip already registred")
-	}
-
 	user := &entities.User{
 		ID: uuid.New(),
 		IP: ip,
@@ -43,7 +32,7 @@ func (s *UserService) Register(ctx context.Context, ip string, name string, disp
 		Dispositive: dispositive,
 	}
 
-	err = s.userRepo.Create(ctx, user)
+	err := s.userRepo.Create(ctx, user)
 
 	if err != nil {
 		return nil, err

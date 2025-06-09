@@ -29,10 +29,10 @@ func NewUserRepository(pool *pgxpool.Pool) UserRepository {
 
 func (r *userRepository) Create(ctx context.Context, user *entities.User) error {
 	query := `
-		INSERT INTO USERS (ID, IP, NAME, EMAIL) 
-		VALUES ($1, $2, $3, $4)
+		INSERT INTO USERS (ID, IP, NAME, LAST_SEEN, DISPOSITIVE) 
+		VALUES ($1, $2, $3, $4, $5)
 	`
-	_, err := r.pool.Exec(ctx, query, user.ID, user.IP, user.Name)
+	_, err := r.pool.Exec(ctx, query, user.ID, user.IP, user.Name, user.LastSeen, user.Dispositive)
 
 	if err != nil {
 		return err

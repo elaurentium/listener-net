@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"os"
 
 	"github.com/fatih/color"
 )
@@ -26,14 +25,8 @@ func PrintBanner() {
 	color.New(color.FgHiGreen).Add(color.Bold).Println(banner)
 }
 
-func Usage(errmsg string) {
-	color.New(color.FgWhite).Add(color.Bold).Printf(
-		"%s\n\n"+
-			"usage: %s\n"+
-			"       %s decrypt key\n"+
-			"      Will try to decrypt your files using the given key\n",
-		errmsg, os.Args[0], os.Args[0],
+func Usage(msg string) {
+	color.New(color.FgHiGreen).Add(color.Bold).Printf(
+		"%s", msg,
 	)
-	os.Exit(2)
-
 }

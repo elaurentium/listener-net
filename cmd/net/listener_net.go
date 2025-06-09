@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/elaurentium/listener-net/cmd"
 	"github.com/elaurentium/listener-net/cmd/sub"
 )
@@ -15,6 +13,6 @@ func init() {
 }
 
 func main() {
-	fmt.Printf("Welcome to the Listener Net application!\n")
-	sub.Interfaces()
+	cmd.Usage("Welcome to the Listener Net application!\n")
+	sub.Interfaces(nil)
 }

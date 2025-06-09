@@ -12,6 +12,7 @@ OUTPUT_LISTER=$(BUILD_DIR)/$(LISTER)
 OUTPUT_SERVER=$(BUILD_DIR)/$(SERVER)
 
 all: constructor deps build
+	docker-compose up --build
 
 deps:
 	go mod download
@@ -21,11 +22,10 @@ constructor:
 
 build:
 	go build -o $(OUTPUT_LISTER) cmd/net/listener_net.go
-	go build -o $(OUTPUT_SERVER) cmd/server/server.go
 
 run: build
-	$(OUTPUT_LISTER) &
-	$(OUTPUT_SERVER)
+	$(OUTPUT_LISTER)
 
 clean:
 	rm -rf $(BUILD_DIR)
+	docker-compose down

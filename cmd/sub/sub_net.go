@@ -2,19 +2,27 @@ package sub
 
 import (
 	"bytes"
+	"context"
 	"encoding/binary"
 	"errors"
-	"log"
+	"fmt"
 	"net"
 	"sync"
 	"time"
 
+	"github.com/elaurentium/listener-net/cmd"
+	"github.com/elaurentium/listener-net/internal/domain/service"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcap"
 )
 
-func Interfaces() {
+type ARPReply struct {
+	IP  net.IP
+	MAC net.HardwareAddr
+}
+
+func Interfaces(userService *service.UserService) {
 	ifaces, err := net.Interfaces()
 
 	if err != nil {
@@ -27,8 +35,8 @@ func Interfaces() {
 		wg.Add(1)
 		go func(iface net.Interface) {
 			defer wg.Done()
-			if err := scan(&iface); err != nil {
-				log.Printf("interface %v: %v", iface.Name, err)
+			if err := scan(&iface, userService); err != nil {
+				cmd.Usage(fmt.Sprintf("interface %v: %v\n", iface.Name, err))
 			}
 		}(iface)
 	}
@@ -36,7 +44,7 @@ func Interfaces() {
 	wg.Wait()
 }
 
-func scan(iface *net.Interface) error {
+func scan(iface *net.Interface, userService *service.UserService) error {
 	var addr *net.IPNet
 
 	addrs, err := iface.Addrs()
@@ -63,7 +71,7 @@ func scan(iface *net.Interface) error {
 	} else if addr.Mask[0] != 0xff || addr.Mask[1] != 0xff {
 		return errors.New("mask means network is too large")
 	}
-	log.Printf("Using network range %v for interface %v", addr, iface.Name)
+	cmd.Usage(fmt.Sprintf("Using network range %v for interface %v\n", addr, iface.Name))
 
 	handle, err := pcap.OpenLive(iface.Name, 65536, true, pcap.BlockForever)
 	if err != nil {
@@ -72,26 +80,43 @@ func scan(iface *net.Interface) error {
 	defer handle.Close()
 
 	stop := make(chan struct{})
-	go readARP(handle, iface, stop)
-	defer close(stop)
+	arpReplies := make(chan *ARPReply)
+	go readARP(context.Background(), handle, iface, stop, arpReplies, userService)
 	for {
+		found := make(map[string]bool)
+
+		go func() {
+			for result := range arpReplies {
+				if !found[result.IP.String()] {
+					found[result.IP.String()] = true
+					cmd.Usage(fmt.Sprintf("%v :: IP %v is at %v\n", time.Now().In(time.Local).Format("2006-01-02 15:04:05"), result.IP, result.MAC))
+				}
+			}
+		}()
+
 		if err := writeARP(handle, iface, addr); err != nil {
-			log.Printf("error writing packets on %v: %v", iface.Name, err)
+			cmd.Usage(fmt.Sprintf("%v :: error writing packets on %v: %v\n", time.Now().In(time.Local).Format("2006-01-02 15:04:05"), iface.Name, err))
 			return err
 		}
-		time.Sleep(10 * time.Second)
+
+		time.Sleep(3 * time.Second)
 	}
+
 }
 
-func readARP(handle *pcap.Handle, iface *net.Interface, stop chan struct{}) {
+func readARP(ctx context.Context, handle *pcap.Handle, iface *net.Interface, stop chan struct{}, replies chan *ARPReply, userService *service.UserService) {
 	src := gopacket.NewPacketSource(handle, layers.LayerTypeEthernet)
 	in := src.Packets()
+
 	for {
-		var packet gopacket.Packet
 		select {
 		case <-stop:
+			close(replies)
 			return
-		case packet = <-in:
+		case packet := <-in:
+			if packet == nil {
+				continue
+			}
 			arpLayer := packet.Layer(layers.LayerTypeARP)
 			if arpLayer == nil {
 				continue
@@ -100,8 +125,17 @@ func readARP(handle *pcap.Handle, iface *net.Interface, stop chan struct{}) {
 			if arp.Operation != layers.ARPReply || bytes.Equal([]byte(iface.HardwareAddr), arp.SourceHwAddress) {
 				continue
 			}
+			replies <- &ARPReply{
+				IP:  net.IP(arp.SourceProtAddress),
+				MAC: net.HardwareAddr(arp.SourceHwAddress),
+			}
 
-			log.Printf("IP %v is at %v", net.IP(arp.SourceProtAddress), net.HardwareAddr(arp.SourceHwAddress))
+			if userService != nil {
+				_, err := userService.Register(ctx, net.IP(arp.SourceProtAddress).String(), "", net.HardwareAddr(arp.SourceHwAddress).String())
+				if err != nil && err.Error() != "ip already registred" {
+					cmd.Logger.Printf("Failed to register IP %v: %v\n", net.IP(arp.SourceProtAddress), err)
+				}
+			}
 		}
 	}
 }
