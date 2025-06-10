@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"os/exec"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -139,26 +141,67 @@ func scan(iface *net.Interface, userService *service.UserService) error {
 
 // getARPCacheIPs reads the local ARP cache to get IPs of connected devices
 func getARPCacheIPs() ([]net.IP, error) {
-    // This is platform-dependent. For Linux, you can parse /proc/net/arp
-    // For simplicity, this is a placeholder. Implement based on your OS.
-    // Example for Linux:
-    data, err := os.ReadFile("/proc/net/arp")
-    if err != nil {
-        return nil, fmt.Errorf("failed to read ARP cache: %w", err)
-    }
-
     var ips []net.IP
-    lines := strings.Split(string(data), "\n")
-    for _, line := range lines[1:] { // Skip header
-        fields := strings.Fields(line)
-        if len(fields) > 0 {
-            ip := net.ParseIP(fields[0])
-            if ip != nil && ip.To4() != nil {
-                ips = append(ips, ip)
-            }
-        }
-    }
-    return ips, nil
+
+	switch runtime.GOOS {
+	case "linux":
+		data, err := os.ReadFile("/proc/net/arp")
+		if err != nil {
+			return nil, fmt.Errorf("failed to read ARP cache on Linux: %w", err)
+		}
+		lines := strings.Split(string(data), "\n")
+		for _, line := range lines[1:] {
+			fields := strings.Fields(line)
+			if len(fields) >= 1 {
+				ip := net.ParseIP(fields[0])
+				if ip != nil && ip.To4() != nil {
+					ips = append(ips, ip)
+				}
+			}
+		}
+
+	case "darwin":
+		out, err := exec.Command("arp", "-a").Output()
+		if err != nil {
+			return nil, fmt.Errorf("failed to read ARP cache on macOS: %w", err)
+		}
+		lines := strings.Split(string(out), "\n")
+		for _, line := range lines {
+			// Format: ? (192.168.1.1) at 0:11:22:33:44:55 on en0 ifscope [ethernet]
+			if strings.Contains(line, " at ") {
+				start := strings.Index(line, "(")
+				end := strings.Index(line, ")")
+				if start >= 0 && end > start {
+					ipStr := line[start+1 : end]
+					ip := net.ParseIP(ipStr)
+					if ip != nil && ip.To4() != nil {
+						ips = append(ips, ip)
+					}
+				}
+			}
+		}
+
+	case "windows":
+		out, err := exec.Command("arp", "-a").Output()
+		if err != nil {
+			return nil, fmt.Errorf("failed to read ARP cache on Windows: %w", err)
+		}
+		lines := strings.Split(string(out), "\n")
+		for _, line := range lines {
+			fields := strings.Fields(line)
+			if len(fields) >= 1 {
+				ip := net.ParseIP(fields[0])
+				if ip != nil && ip.To4() != nil {
+					ips = append(ips, ip)
+				}
+			}
+		}
+
+	default:
+		return nil, fmt.Errorf("unsupported OS: %s", runtime.GOOS)
+	}
+
+	return ips, nil
 }
 
 func readARP(ctx context.Context, handle *pcap.Handle, iface *net.Interface, stop chan struct{}, replies chan *ARPReply, userService *service.UserService) {

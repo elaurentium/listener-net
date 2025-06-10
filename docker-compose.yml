@@ -39,14 +39,6 @@ services:
     depends_on:
       - db
 
-    command: > 
-      sh -c "until pg_isready -h ${DB_HOST} -p ${DB_PORT} -U ${DB_USER} -d ${DB_NAME}; do
-                    echo 'Waiting for db';
-                    sleep 2;
-                    done;
-                    echo 'db is ready'
-                    ./server"
-
 networks:
   listener-net:
     driver: bridge
