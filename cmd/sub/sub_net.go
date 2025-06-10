@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -80,29 +81,84 @@ func scan(iface *net.Interface, userService *service.UserService) error {
 	}
 	defer handle.Close()
 
+	if err := handle.SetBPFFilter("arp"); err != nil {
+		return fmt.Errorf("failed to set BPF filter: %w", err)
+	}
+
 	stop := make(chan struct{})
 	arpReplies := make(chan *ARPReply)
 	go readARP(context.Background(), handle, iface, stop, arpReplies, userService)
-	for {
-		found := make(map[string]bool)
+	connectedIPs, err := getARPCacheIPs()
+    if err != nil {
+        cmd.Usage(fmt.Sprintf("Warning: failed to read ARP cache: %v\n", err))
+    }
 
-		go func() {
-			for result := range arpReplies {
-				if !found[result.IP.String()] {
-					found[result.IP.String()] = true
-					cmd.Usage(fmt.Sprintf("%v :: IP %v is at %v\n", time.Now().In(time.Local).Format("2006-01-02 15:04:05"), result.IP, result.MAC))
-				}
-			}
-		}()
+    // Track discovered devices
+    found := make(map[string]bool)
 
-		if err := writeARP(handle, iface, addr); err != nil {
-			cmd.Usage(fmt.Sprintf("%v :: error writing packets on %v: %v\n", time.Now().In(time.Local).Format("2006-01-02 15:04:05"), iface.Name, err))
-			return err
-		}
+    // Process ARP replies
+    go func() {
+        for result := range arpReplies {
+            ipStr := result.IP.String()
+            if !found[ipStr] {
+                found[ipStr] = true
+                cmd.Usage(fmt.Sprintf("%v :: IP %v is at %v\n", time.Now().In(time.Local).Format("2006-01-02 15:04:05"), result.IP, result.MAC))
+            }
+        }
+    }()
 
-		time.Sleep(3 * time.Second)
-	}
+    // Periodically send ARP requests to known IPs
+    ticker := time.NewTicker(10 * time.Second)
+    defer ticker.Stop()
 
+    for {
+        select {
+        case <-ticker.C:
+            // Refresh ARP cache
+            currentIPs, err := getARPCacheIPs()
+            if err != nil {
+                cmd.Usage(fmt.Sprintf("Warning: failed to refresh ARP cache: %v\n", err))
+            } else {
+                connectedIPs = currentIPs
+            }
+
+            // Send ARP requests only to known connected IPs
+            for _, ip := range connectedIPs {
+                if !found[ip.String()] {
+                    if err := writeARP(handle, iface, addr); err != nil {
+                        cmd.Usage(fmt.Sprintf("%v :: error sending ARP request to %v: %v\n", time.Now().In(time.Local).Format("2006-01-02 15:04:05"), ip, err))
+                    }
+                }
+            }
+        case <-stop:
+            return nil
+        }
+    }
+
+}
+
+// getARPCacheIPs reads the local ARP cache to get IPs of connected devices
+func getARPCacheIPs() ([]net.IP, error) {
+    // This is platform-dependent. For Linux, you can parse /proc/net/arp
+    // For simplicity, this is a placeholder. Implement based on your OS.
+    // Example for Linux:
+    data, err := os.ReadFile("/proc/net/arp")
+    if err != nil {
+        return nil, fmt.Errorf("failed to read ARP cache: %w", err)
+    }
+
+    var ips []net.IP
+    lines := strings.Split(string(data), "\n")
+    for _, line := range lines[1:] { // Skip header
+        fields := strings.Fields(line)
+        if len(fields) > 0 {
+            ip := net.ParseIP(fields[0])
+            if ip != nil && ip.To4() != nil {
+                ips = append(ips, ip)
+            }
+        }
+    }
+    return ips, nil
 }
 
 func readARP(ctx context.Context, handle *pcap.Handle, iface *net.Interface, stop chan struct{}, replies chan *ARPReply, userService *service.UserService) {

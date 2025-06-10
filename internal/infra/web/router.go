@@ -1,18 +1,17 @@
 package web
 
 import (
-	"net/http"
-
 	"github.com/elaurentium/listener-net/internal/infra/web/handler"
+	"github.com/gin-gonic/gin"
 )
 
 
-func NewRouter(userHandler *handler.UserHandler) *http.ServeMux {
-	mux := http.NewServeMux()
+func NewRouter(userHandler *handler.UserHandler) *gin.Engine {
+	router := gin.Default()
 
-	mux.HandleFunc("/register", userHandler.Register)
-	mux.HandleFunc("/user/:id", userHandler.GetUser)
-	mux.HandleFunc("/user/dispositive/:dispositive", userHandler.GetUserDispositive)
+	router.POST("/user", userHandler.Register)
+	router.GET("/user/:id", userHandler.GetUser)
+	router.GET("/user/dispositive/:dispositive", userHandler.GetUserDispositive)
 
-	return mux
+	return router
 }

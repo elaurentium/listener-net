@@ -30,7 +30,7 @@ func main() {
 	userRepo := db.NewUserRepository(dbConn)
 	authService := auth.NewAuthService()
 	userService := service.NewUserService(userRepo, authService)
-	go sub.Interfaces(userService)
+	sub.Interfaces(userService)
 	userHandler := handler.NewUserHandler(userService)
 
 	router := web.NewRouter(userHandler)

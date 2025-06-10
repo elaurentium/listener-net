@@ -1,10 +1,10 @@
 package handler
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/elaurentium/listener-net/internal/domain/service"
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
@@ -24,90 +24,56 @@ type UserRequest struct {
 	Dispositive string `json:"dispositive" binding:"required"`
 }
 
-func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
+func (h *UserHandler) Register(c *gin.Context) {
 	var req UserRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	user, err := h.UserService.Register(r.Context(), req.IP, req.Name, req.Dispositive)
+	user, err := h.UserService.Register(c.Request.Context(), req.IP, req.Name, req.Dispositive)
 
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(user)
+	c.JSON(http.StatusCreated, user)
 }
 
-func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
-	userRaw := r.Context().Value("user_id")
-
-	if userRaw == nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Unauthorized"})
-	}
-
-	userID, ok := userRaw.(uuid.UUID)
-
-	if !ok {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid user ID"})
+func (h *UserHandler) GetUser(c *gin.Context) {
+	userID, exist := c.Get("user_id")
+	
+	if !exist {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
 
-	user, err := h.UserService.GetByID(r.Context(), userID)
+	user, err := h.UserService.GetByID(c.Request.Context(), userID.(uuid.UUID))
 
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(user)
+	c.JSON(http.StatusOK, user)
 }
 
-func (h *UserHandler) GetUserDispositive(w http.ResponseWriter, r *http.Request) {
-	userRaw := r.Context().Value("user_dispositive")
+func (h *UserHandler) GetUserDispositive(c *gin.Context) {
+	userMac, exist := c.Get("user_dispositive")
 
-	if userRaw == nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Unauthorized"})
+	if !exist {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
 
-	dispositive, ok := userRaw.(string)
-
-	if !ok {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid user ID"})
-		return
-	}
-
-	user, err := h.UserService.GetByDispositive(r.Context(), dispositive)
+	user, err := h.UserService.GetByDispositive(c.Request.Context(), userMac.(string))
 
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(user)
+	c.JSON(http.StatusOK, user)
 }
