@@ -14,7 +14,7 @@ type UserRepository interface {
 	GetByIP(ctx context.Context, ip string) (*entities.User, error)
 	GetByDispositive(ctx context.Context, dispositive string) (*entities.User, error)
 	Create(ctx context.Context, user *entities.User) error
-	CheckIPWasRegistred(ctx context.Context, ip string) (bool, error)
+	CheckIPWasRegistered(ctx context.Context, ip string) (bool, error)
 }
 
 type userRepository struct {
@@ -29,8 +29,11 @@ func NewUserRepository(pool *pgxpool.Pool) UserRepository {
 
 func (r *userRepository) Create(ctx context.Context, user *entities.User) error {
 	query := `
-		INSERT INTO USERS (ID, IP, NAME, LAST_SEEN, DISPOSITIVE) 
+		INSERT INTO USERS (ID, IP, NAME, LAST_SEEN, DISPOSITIVE)
 		VALUES ($1, $2, $3, $4, $5)
+		ON CONFLICT (DISPOSITIVE) DO UPDATE SET
+			IP = EXCLUDED.IP,
+			LAST_SEEN = EXCLUDED.LAST_SEEN
 	`
 	_, err := r.pool.Exec(ctx, query, user.ID, user.IP, user.Name, user.LastSeen, user.Dispositive)
 
@@ -83,13 +86,13 @@ func (r *userRepository) GetByDispositive(ctx context.Context, dispositive strin
 	return user, nil
 }
 
-func (r *userRepository) CheckIPWasRegistred(ctx context.Context, ip string) (bool, error) {
+func (r *userRepository) CheckIPWasRegistered(ctx context.Context, ip string) (bool, error) {
 	var exists bool
 
 	err := r.pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM USERS WHERE IP = $1)", ip).Scan(&exists)
 
 	if err != nil {
-		return false, fmt.Errorf("failed to check if IP was registred: %w", err)
+		return false, fmt.Errorf("failed to check if IP was registered: %w", err)
 	}
 
 	return exists, nil

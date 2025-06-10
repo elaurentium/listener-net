@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"os"
 	"sync"
 	"time"
 
@@ -131,10 +132,13 @@ func readARP(ctx context.Context, handle *pcap.Handle, iface *net.Interface, sto
 			}
 
 			if userService != nil {
-				_, err := userService.Register(ctx, net.IP(arp.SourceProtAddress).String(), "", net.HardwareAddr(arp.SourceHwAddress).String())
-				if err != nil && err.Error() != "ip already registred" {
-					cmd.Logger.Printf("Failed to register IP %v: %v\n", net.IP(arp.SourceProtAddress), err)
+				hostname, err := os.Hostname()
+				if err != nil {
+					cmd.Logger.Printf("could not get hostname: %v", err)
+					continue
 				}
+
+				userService.Register(ctx, net.IP(arp.SourceProtAddress).String(), hostname, net.HardwareAddr(arp.SourceHwAddress).String())
 			}
 		}
 	}

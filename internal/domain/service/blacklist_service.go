@@ -28,14 +28,14 @@ type BlacklistRequest struct {
 }
 
 func (r *BlacklistService) Register(ctx context.Context, ip string, name string, dispositive string) (*entities.Blacklist, error) {
-	exist, err := r.blacklistRepo.CheckIPWasRegistred(ctx, ip)
+	exist, err := r.blacklistRepo.CheckIPWasRegistered(ctx, ip)
 
 	if err != nil {
 		return nil, err
 	}
 
 	if exist {
-		return nil, errors.New("ip already registred on blacklist")
+		return nil, errors.New("ip already registered on blacklist")
 	}
 
 	blacklist := &entities.Blacklist{

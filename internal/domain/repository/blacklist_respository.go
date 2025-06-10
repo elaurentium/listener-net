@@ -10,6 +10,6 @@ import (
 type BlacklistRepository interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*entities.Blacklist, error)
 	GetByIP(ctx context.Context, ip string) (*entities.Blacklist, error)
-	CheckIPWasRegistred(ctx context.Context, ip string) (bool, error)
+	CheckIPWasRegistered(ctx context.Context, ip string) (bool, error)
 	Create(ctx context.Context, user *entities.Blacklist) error
 }

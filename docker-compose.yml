@@ -30,16 +30,13 @@ services:
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_NAME}
-      - DB_HOST=db
+      - DB_HOST=localhost
       - DB_PORT=${DB_PORT}
-    ports:
-      - "8080:8080"
     depends_on:
       - db
-    networks:
-      - listener-net
+    network_mode: "host"
     command: > 
-      sh -c "until pg_isready -h db -p ${DB_PORT} -U ${DB_USER} -d ${DB_NAME}; do
+      sh -c "until pg_isready -h localhost -p ${DB_PORT} -U ${DB_USER} -d ${DB_NAME}; do
                     echo 'Waiting for db';
                     sleep 2;
                     done;
