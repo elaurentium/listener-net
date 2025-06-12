@@ -18,6 +18,7 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
 elif [[ "$OSTYPE" == "darwin"* ]]; then
     export GOOS=darwin
     export GOARCH=amd64
+    export CGO_ENABLED=1
     export CGO_CFLAGS="-I/usr/local/include"
     export CGO_LDFLAGS="-L/usr/local/lib"
 
